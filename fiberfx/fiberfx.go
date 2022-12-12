@@ -24,32 +24,23 @@ func createApp() *fiber.App {
 	return app
 }
 
-type Route struct {
+type Route[T any] struct {
 	Path    string
 	Method  string
-	Handler fiber.Handler
+	Handler T
 }
 
 type Mounter interface {
 	Mount(app *fiber.App)
 }
 
-type Register interface {
-	Register(app *fiber.App)
-}
-
 type params struct {
 	fx.In
-	Mounts []Mounter `optional:"true"`
-	Regs   Register  `optional:"true"`
-	Routes []Route   `optional:"true"`
+	Mounts []Mounter              `optional:"true"`
+	Routes []Route[fiber.Handler] `optional:"true"`
 }
 
 func registerRoutes(app *fiber.App, p params) {
-	if p.Regs != nil {
-		p.Regs.Register(app)
-	}
-
 	if p.Routes != nil {
 		for _, route := range p.Routes {
 			app.Add(route.Method, route.Path, route.Handler)
