@@ -10,13 +10,13 @@ import (
 func Module() fx.Option {
 	return fx.Module(
 		"fiberfx",
-		fx.Provide(createApp),
-		fx.Invoke(registerRoutes),
+		fx.Provide(New),
+		fx.Invoke(Register),
 		fx.Invoke(startApp),
 	)
 }
 
-func createApp() *fiber.App {
+func New() *fiber.App {
 	app := fiber.New(fiber.Config{
 		Immutable:     true,
 		CaseSensitive: false,
@@ -40,7 +40,7 @@ type params struct {
 	Routes []Route[fiber.Handler] `optional:"true"`
 }
 
-func registerRoutes(app *fiber.App, p params) {
+func Register(app *fiber.App, p params) {
 	if p.Routes != nil {
 		for _, route := range p.Routes {
 			app.Add(route.Method, route.Path, route.Handler)
