@@ -11,6 +11,7 @@ func Module() fx.Option {
 	return fx.Module(
 		"fiberfx",
 		fx.Provide(createApp),
+		fx.Invoke(registerRoutes),
 		fx.Invoke(startApp),
 	)
 }
@@ -21,6 +22,45 @@ func createApp() *fiber.App {
 		CaseSensitive: false,
 	})
 	return app
+}
+
+type Route struct {
+	Path    string
+	Method  string
+	Handler fiber.Handler
+}
+
+type Mounter interface {
+	Mount(app *fiber.App)
+}
+
+type Register interface {
+	Register(app *fiber.App)
+}
+
+type params struct {
+	fx.In
+	Mounts []Mounter `optional:"true"`
+	Regs   Register  `optional:"true"`
+	Routes []Route   `optional:"true"`
+}
+
+func registerRoutes(app *fiber.App, p params) {
+	if p.Regs != nil {
+		p.Regs.Register(app)
+	}
+
+	if p.Routes != nil {
+		for _, route := range p.Routes {
+			app.Add(route.Method, route.Path, route.Handler)
+		}
+	}
+
+	if p.Mounts != nil {
+		for _, mounter := range p.Mounts {
+			mounter.Mount(app)
+		}
+	}
 }
 
 func startApp(lf fx.Lifecycle, app *fiber.App) {
